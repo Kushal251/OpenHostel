@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
 
-  allowedDevOrigins: ['192.168.102.129'],
+ allowedDevOrigins: ['192.168.43.129'],
 
   experimental: {
     staleTimes: {
