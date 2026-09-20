@@ -8,7 +8,7 @@ import { effectiveMealWindows, timeToMinutes, todayInIndia } from "@/lib/meal-se
 
 async function managedMess(id: string) {
   const session = await auth();
-  if (!session?.user || !["ADMIN", "MESS_MANAGER"].includes(session.user.role)) return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
+  if (!session?.user) return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
   const mess = await prisma.mess.findUnique({ where: { id }, include: { mealWindows: { orderBy: { sortOrder: "asc" } }, staff: { where: { userId: session.user.id }, select: { userId: true } } } });
   if (!mess) return { error: NextResponse.json({ error: "Mess not found." }, { status: 404 }) };
   if (!canEditTodayWindows(session.user.role, session.user.id, mess)) return { error: NextResponse.json({ error: "You can only change timings for messes assigned to you." }, { status: 403 }) };

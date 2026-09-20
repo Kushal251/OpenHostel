@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
-import { requireStaff } from "@/lib/access";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { canManageMess } from "@/lib/mess";
+import { canAccessMessOperations } from "@/lib/mess";
 import {
   getCachedMessTransactionDashboardPage,
   getFreshMessTransactionDashboardPage,
@@ -10,11 +10,11 @@ import {
 } from "@/lib/mess-transaction-dashboard";
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await requireStaff();
+  const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const messId = (await params).id;
-  const mess = await prisma.mess.findUnique({ where: { id: messId }, select: { id: true, managerId: true } });
-  if (!mess || !canManageMess(session.user.role, session.user.id, mess)) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+  const mess = await prisma.mess.findUnique({ where: { id: messId }, select: { id: true, managerId: true, staff: { where: { userId: session.user.id }, select: { userId: true } } } });
+  if (!mess || !canAccessMessOperations(session.user.role, session.user.id, mess)) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
 
   const query = new URL(request.url).searchParams;
   const range = query.get("range") || "day";

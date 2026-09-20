@@ -25,6 +25,7 @@ export default function MealScanner({ messId, messName }: { messId: string; mess
   const [selectedWindowId, setSelectedWindowId] = useState<string | null>(null);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [receipt, setReceipt] = useState<{ id: string; servedAt: string; userName: string } | null>(null);
+  const [passReminder, setPassReminder] = useState<{ expiresAt: string; daysRemaining: number } | null>(null);
   const [refreshingTimings, setRefreshingTimings] = useState(false);
   const [refreshUntil, setRefreshUntil] = useState(0);
   const [clock, setClock] = useState(Date.now());
@@ -80,6 +81,7 @@ export default function MealScanner({ messId, messName }: { messId: string; mess
     setStep("idle");
     setMessage("");
     setSelectedWindowId(null);
+    setPassReminder(null);
   };
 
   async function start() {
@@ -135,6 +137,7 @@ export default function MealScanner({ messId, messName }: { messId: string; mess
       if (data.state === "DONE") {
         setMeal(data.transaction.mealWindow.label);
         setReceipt({ id: data.transaction.id, servedAt: data.transaction.servedAt, userName: data.userName || "Student" });
+        setPassReminder(data.passReminder || null);
         setStep("done");
         router.refresh();
       }
@@ -209,7 +212,7 @@ export default function MealScanner({ messId, messName }: { messId: string; mess
       {step === "closed" && <ClosedNotice text={message} refreshing={refreshingTimings} refreshRemaining={Math.max(0, refreshUntil - clock)} onRefresh={() => void refreshWindowTimings()} onScanAgain={() => void start()} onClose={close} />}
       {step === "error" && <Notice icon="!" title="Unable to scan" text={message} primary="Try again" onPrimary={() => void start()} secondary="Close" onSecondary={close} />}
     </Modal>
-    {open && step === "done" && <SuccessScreen meal={meal} messName={messName} receipt={receipt} onHistory={() => router.push("/history")} onClose={close} />}
+    {open && step === "done" && <SuccessScreen meal={meal} messName={messName} receipt={receipt} passReminder={passReminder} onHistory={() => router.push("/history")} onClose={close} />}
   </>;
 }
 
@@ -240,6 +243,6 @@ function ClosedNotice({ text, refreshing, refreshRemaining, onRefresh, onScanAga
   return <div className="text-center"><div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-[#f8e2dc] text-3xl">🕒</div><h3 className="mt-4 text-xl font-bold">No serving window is open</h3><p className="mt-2 text-sm leading-6 text-slate-600">{text}</p><button disabled={refreshing || refreshRemaining > 0} onClick={onRefresh} className="mt-5 min-h-11 w-full rounded-xl bg-slate-100 px-4 text-sm font-bold text-[#234b50] disabled:opacity-50">{refreshing ? "↻ Refreshing timings…" : `↻ ${refreshLabel}`}</button><button onClick={onScanAgain} className="btn-primary mt-3 w-full">Scan again</button><button onClick={onClose} className="mt-2 w-full py-3 text-sm font-bold text-slate-600">Close</button></div>;
 }
 
-function SuccessScreen({ meal, messName, receipt, onHistory, onClose }: { meal: string; messName: string; receipt: { id: string; servedAt: string; userName: string } | null; onHistory: () => void; onClose: () => void }) { return <section className="fixed inset-0 z-[100] grid min-h-screen place-items-center overflow-y-auto bg-gradient-to-br from-[#0d2d32] via-[#234b50] to-[#39727a] p-5 text-center text-white"><div className="w-full max-w-lg animate-[pulse_1.6s_ease-in-out_infinite] rounded-[2rem] border border-white/20 bg-white/10 p-7 shadow-2xl backdrop-blur sm:p-10"><div className="mx-auto grid h-24 w-24 place-items-center rounded-full bg-emerald-400 text-5xl text-emerald-950 shadow-[0_0_0_12px_rgba(52,211,153,.16)]">✓</div><p className="mt-8 text-xs font-bold uppercase tracking-[.22em] text-[#f4c86a]">Transaction successful</p><h1 className="mt-3 text-4xl font-black tracking-tight sm:text-5xl">{receipt?.userName}</h1><p className="mt-3 text-xl font-bold text-emerald-100">{meal} recorded</p><p className="mt-4 text-sm text-emerald-50">{messName} · {receipt && new Date(receipt.servedAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}</p><p className="mt-4 text-xs text-emerald-100">Receipt #{receipt?.id}</p><div className="mt-8 grid gap-3 sm:grid-cols-2"><button onClick={onHistory} className="min-h-12 rounded-xl bg-white px-4 font-bold text-[#234b50]">View meal history</button><button onClick={onClose} className="min-h-12 rounded-xl border border-white/40 px-4 font-bold text-white">Done</button></div></div></section>; }
+function SuccessScreen({ meal, messName, receipt, passReminder, onHistory, onClose }: { meal: string; messName: string; receipt: { id: string; servedAt: string; userName: string } | null; passReminder: { expiresAt: string; daysRemaining: number } | null; onHistory: () => void; onClose: () => void }) { const expiry = passReminder && new Date(passReminder.expiresAt).toLocaleDateString("en-IN", { dateStyle: "medium" }); return <section className="fixed inset-0 z-[100] grid min-h-screen place-items-center overflow-y-auto bg-gradient-to-br from-[#0d2d32] via-[#234b50] to-[#39727a] p-5 text-center text-white"><div className="w-full max-w-lg animate-[pulse_1.6s_ease-in-out_infinite] rounded-[2rem] border border-white/20 bg-white/10 p-7 shadow-2xl backdrop-blur sm:p-10"><div className="mx-auto grid h-24 w-24 place-items-center rounded-full bg-emerald-400 text-5xl text-emerald-950 shadow-[0_0_0_12px_rgba(52,211,153,.16)]">✓</div><p className="mt-8 text-xs font-bold uppercase tracking-[.22em] text-[#f4c86a]">Transaction successful</p><h1 className="mt-3 text-4xl font-black tracking-tight sm:text-5xl">{receipt?.userName}</h1><p className="mt-3 text-xl font-bold text-emerald-100">{meal} recorded</p><p className="mt-4 text-sm text-emerald-50">{messName} · {receipt && new Date(receipt.servedAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}</p><p className="mt-4 text-xs text-emerald-100">Receipt #{receipt?.id}</p>{passReminder && <div className="mt-6 rounded-2xl border border-amber-200/60 bg-amber-50 p-4 text-left text-amber-950"><p className="text-xs font-black uppercase tracking-[.16em] text-amber-700">Pass renewal reminder</p><p className="mt-2 text-sm font-semibold leading-6">Your mess pass is valid until {expiry}. {passReminder.daysRemaining === 0 ? "From tomorrow, you will not be able to scan or receive meals." : `You have ${passReminder.daysRemaining} day${passReminder.daysRemaining === 1 ? "" : "s"} left before it expires.`} Please make your payment to renew your pass and avoid interruption to your meals.</p></div>}<div className="mt-8 grid gap-3 sm:grid-cols-2"><button onClick={onHistory} className="min-h-12 rounded-xl bg-white px-4 font-bold text-[#234b50]">View meal history</button><button onClick={onClose} className="min-h-12 rounded-xl border border-white/40 px-4 font-bold text-white">Done</button></div></div></section>; }
 
 function Notice({ icon, title, text, primary, onPrimary, secondary, onSecondary }: { icon: string; title: string; text: string; primary: string; onPrimary: () => void; secondary?: string; onSecondary?: () => void }) { return <div className="text-center"><div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-[#f8e2dc] text-3xl">{icon}</div><h3 className="mt-4 text-xl font-bold">{title}</h3><p className="mt-2 text-sm leading-6 text-slate-600">{text}</p><button onClick={onPrimary} className="btn-primary mt-5 w-full">{primary}</button>{secondary && <button onClick={onSecondary} className="mt-2 w-full py-3 text-sm font-bold text-slate-600">{secondary}</button>}</div>; }

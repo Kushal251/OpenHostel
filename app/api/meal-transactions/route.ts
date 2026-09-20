@@ -5,6 +5,23 @@ import { prisma } from "@/lib/prisma";
 import { currentMealWindow, isMessQr, todayInIndia } from "@/lib/meal-service";
 import { getCachedDailyMealWindows, getCachedDailyPassValidation } from "@/lib/daily-meal-cache";
 
+function indiaDate(value: Date | string) {
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date(value));
+  const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((item) => item.type === type)?.value || "00";
+  return `${part("year")}-${part("month")}-${part("day")}`;
+}
+
+function expiryReminder(expiresAt: Date | string | null, serviceDate: string) {
+  if (!expiresAt) return null;
+  const expiryDate = indiaDate(expiresAt);
+  const today = Date.parse(`${serviceDate}T00:00:00Z`);
+  const expiry = Date.parse(`${expiryDate}T00:00:00Z`);
+  const daysRemaining = Math.round((expiry - today) / 86_400_000);
+  return daysRemaining >= 0 && daysRemaining <= 3
+    ? { expiresAt: new Date(expiresAt).toISOString(), daysRemaining }
+    : null;
+}
+
 export async function POST(request: Request) {
   const session = await auth(); if (!session?.user) return NextResponse.json({ error: "Please sign in first." }, { status: 401 });
   const { messId, qr, confirm, mealWindowId, refreshWindows } = await request.json();
@@ -22,6 +39,7 @@ export async function POST(request: Request) {
   const windows = await getCachedDailyMealWindows(String(messId), serviceDate);
   if (!windows) return NextResponse.json({ error: "Mess not found." }, { status: 404 });
   const dailyValidation = await getCachedDailyPassValidation(String(messId), session.user.id, serviceDate);
+  let passExpiresAt = dailyValidation?.pass.expiresAt ?? null;
 
   if (!dailyValidation) {
     const pass = await prisma.messPassRequest.findFirst({ where: { messId: String(messId), userId: session.user.id, status: "ACTIVE", startsAt: { lte: new Date() }, expiresAt: { gte: new Date() } }, orderBy: { expiresAt: "desc" } });
@@ -30,6 +48,7 @@ export async function POST(request: Request) {
       const remainingDays = Math.max(1, Math.ceil((pass.pauseEndsAt.getTime() - Date.now()) / (24 * 60 * 60 * 1000)));
       return NextResponse.json({ state: "PAUSED", pauseEndsAt: pass.pauseEndsAt, remainingDays }, { status: 403 });
     }
+    passExpiresAt = pass.expiresAt;
     await prisma.dailyMessPassValidation.upsert({
       where: { messId_userId_serviceDate: { messId: String(messId), userId: session.user.id, serviceDate } },
       create: { messId: String(messId), userId: session.user.id, passId: pass.id, serviceDate },
@@ -48,7 +67,7 @@ export async function POST(request: Request) {
     const transaction = await prisma.mealTransaction.create({ data: { messId: String(messId), userId: session.user.id, mealWindowId: activeWindow.id, serviceDate: service.serviceDate }, include: { mess: { select: { name: true } }, mealWindow: { select: { label: true } } } });
     revalidateTag("mess-transaction-dashboard", "max");
     revalidateTag("meal-payment-history", { expire: 0 });
-    return NextResponse.json({ state: "DONE", transaction, userName: session.user.name || "Student" });
+    return NextResponse.json({ state: "DONE", transaction, userName: session.user.name || "Student", passReminder: expiryReminder(passExpiresAt, serviceDate) });
   } catch {
     return NextResponse.json({ error: `Your ${activeWindow.label} meal is already recorded for today.` }, { status: 409 });
   }

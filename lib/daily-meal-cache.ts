@@ -27,7 +27,7 @@ export const getCachedDailyPassValidation = unstable_cache(
   (messId: string, userId: string, serviceDate: string) =>
     prisma.dailyMessPassValidation.findUnique({
       where: { messId_userId_serviceDate: { messId, userId, serviceDate } },
-      select: { id: true, passId: true },
+      select: { id: true, passId: true, pass: { select: { expiresAt: true } } },
     }),
   ["daily-mess-pass-validation"],
   { revalidate: 86_400, tags: ["daily-mess-pass-validation"] },

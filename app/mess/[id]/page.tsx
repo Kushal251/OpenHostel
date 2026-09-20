@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import AppNavbar from "@/components/AppNavbar";
 import MessQr from "@/components/mess/MessQr";
 import MessDeferredSections from "@/components/mess/MessDeferredSections";
-import { canViewMess } from "@/lib/mess";
+import { canAccessMessOperations, canViewMess } from "@/lib/mess";
 import { getCachedMessProfile } from "@/lib/mess-profile";
 
 export default async function MessProfilePage({
@@ -16,10 +16,11 @@ export default async function MessProfilePage({
   const mess = await getCachedMessProfile(id);
   if (!mess) notFound();
   if (!canViewMess(session.user.role, session.user.id, mess)) redirect("/home");
-  const canManage =
-    session.user.role === "ADMIN" ||
-    (session.user.role === "MESS_MANAGER" &&
-      session.user.id === mess.managerId);
+  const canManage = canAccessMessOperations(
+    session.user.role,
+    session.user.id,
+    mess,
+  );
   return (
     <main className="min-h-screen bg-[#f7f7f4]">
       <AppNavbar />
@@ -47,7 +48,9 @@ export default async function MessProfilePage({
               className="mt-7 inline-flex min-h-11 items-center rounded-xl bg-white px-4 text-sm font-bold text-[#234b50]"
               style={{color: "#234b50"}}
             >
-              Manage this mess →
+              {session.user.id === mess.managerId || session.user.role === "ADMIN"
+                ? "Manage this mess →"
+                : "Open staff dashboard →"}
             </Link>
           )}
         </section>

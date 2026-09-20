@@ -43,6 +43,7 @@ export default async function HomePage() {
   const isAdmin = session.user.role === "ADMIN";
   const isMessManager = session.user.role === "MESS_MANAGER";
   let messes: MessPreview[] = [];
+  let operationMesses: MessPreview[] = [];
   let activePass: {
     finalDays: number | null;
     expiresAt: Date | string | null;
@@ -52,10 +53,11 @@ export default async function HomePage() {
 
   if (isAdmin) {
     messes = await getAdminHomeMesses();
-  } else if (isMessManager) {
-    messes = await getManagerHomeMesses(session.user.id);
   } else {
-    if (session.user.hostel) {
+    operationMesses = await getManagerHomeMesses(session.user.id);
+    if (isMessManager) {
+      messes = operationMesses;
+    } else if (session.user.hostel) {
       messes = await getStudentHomeMesses(session.user.hostel);
     }
   }
@@ -64,8 +66,7 @@ export default async function HomePage() {
     activePass = await getActiveHomePass(session.user.id);
   }
 
-  const timingMesses = isMessManager
-    ? messes.flatMap((mess) => {
+  const timingMesses = operationMesses.flatMap((mess) => {
         if (!mess.mealWindows || !mess.dailyMealWindows) return [];
         return [
           {
@@ -79,8 +80,8 @@ export default async function HomePage() {
             hasOverride: mess.dailyMealWindows.length > 0,
           },
         ];
-      })
-    : [];
+      });
+  const isMessOperationsUser = isMessManager || operationMesses.length > 0;
   const activePassExpiry = activePass?.expiresAt
     ? new Date(activePass.expiresAt)
     : null;
@@ -132,7 +133,7 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {isMessManager && <TodayWindowManager messes={timingMesses} />}
+        {isMessOperationsUser && <TodayWindowManager messes={timingMesses} />}
 
         {activePass && (
           <Link

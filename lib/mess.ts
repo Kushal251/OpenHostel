@@ -65,8 +65,16 @@ export function canEditTodayWindows(
   userId: string,
   mess: MessMembership,
 ) {
-  return role === "ADMIN" || canViewMess(role, userId, mess);
+  return (
+    role === "ADMIN" ||
+    mess.managerId === userId ||
+    Boolean(mess.staff?.some((member) => member.userId === userId))
+  );
 }
+
+// Mess staff have operational access only: they can update today's serving
+// windows and review transactions for the mess they are assigned to.
+export const canAccessMessOperations = canEditTodayWindows;
 
 export function cleanMessInput(body: Record<string, unknown>) {
   const phones = Array.isArray(body.phoneNumbers)
