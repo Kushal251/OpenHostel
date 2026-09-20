@@ -1,0 +1,4 @@
+-- This migration was created before the Mess table migration was committed.
+-- It must remain a no-op so a fresh/shadow database can replay the migration
+-- history in chronological order. The canonical Mess definition appears in
+-- 20260904130000_mess_management.

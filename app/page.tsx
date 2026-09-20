@@ -1,69 +1,279 @@
-import Image from "next/image";
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+
+const Arrow = () => <span aria-hidden="true">↗</span>;
 
 export default function Home() {
+  const router = useRouter();
+  const [menuOpen, setMenuOpen] = useState(false);
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <main>
+      <nav className="nav">
+        <a className="brand" href="#top" aria-label="OpenHostel home">
+          <i>O</i>
+          <span>OpenHostel</span>
+        </a>
+        <button
+          className="menu"
+          aria-expanded={menuOpen}
+          aria-label="Toggle menu"
+          onClick={() => setMenuOpen(!menuOpen)}
+        >
+          <b></b>
+          <b></b>
+        </button>
+        <div className={menuOpen ? "nav-links open" : "nav-links"}>
+          <a href="#how" onClick={() => setMenuOpen(false)}>
+            How it works
+          </a>
+          <a href="#roles" onClick={() => setMenuOpen(false)}>
+            For everyone
+          </a>
+          <a href="#about" onClick={() => setMenuOpen(false)}>
+            Why OpenHostel
+          </a>
+          <a
+            className="nav-cta"
+            onClick={() => {
+              setMenuOpen(false);
+              router.push("/register");
+            }}
+          >
+            Register <Arrow />
+          </a>
+        </div>
+      </nav>
+
+      <section className="hero" id="top">
+        <div className="hero-copy">
+          <p className="eyebrow">
+            <span></span> Built for better hostel life
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
+          <h1>
+            The simpler way
+            <br />
+            to run a <em>hostel.</em>
+          </h1>
+          <p className="hero-text">
+            One clear, connected space for students, staff and mess
+            vendors—without the paperwork.
+          </p>
           <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            id="register"
+            className="primary-cta"
+            onClick={() => router.push("/register")}
           >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
+            Register your hostel <Arrow />
           </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          <div className="trust">
+            <div className="avatars">
+              <span>R</span>
+              <span>M</span>
+              <span>S</span>
+              <span>+</span>
+            </div>
+            <p>
+              Made openly with
+              <br />
+              <strong>students &amp; colleges</strong>
+            </p>
+          </div>
         </div>
-      </main>
-    </div>
+        <div
+          className="hero-art"
+          aria-label="OpenHostel student dashboard preview"
+        >
+          <div className="sun"></div>
+          <div className="arch a1"></div>
+          <div className="arch a2"></div>
+          <div className="plant">
+            <i></i>
+            <i></i>
+            <i></i>
+          </div>
+          <div className="dashboard">
+            <div className="dash-top">
+              <span className="tiny-logo">O</span>
+              <span className="dots">•••</span>
+            </div>
+            <p className="welcome">Good morning, Riya</p>
+            <h3>Your hostel, at a glance.</h3>
+            <div className="active-card">
+              <span className="check">✓</span>
+              <div>
+                <small>MESS SUBSCRIPTION</small>
+                <b>Active · August</b>
+              </div>
+            </div>
+            <div className="dash-grid">
+              <div>
+                <span>⌂</span>
+                <small>Room</small>
+                <b>A–204</b>
+              </div>
+              <div>
+                <span>◷</span>
+                <small>Next meal</small>
+                <b>Lunch · 1 PM</b>
+              </div>
+            </div>
+          </div>
+          <div className="floating qr">
+            <span>▦</span>
+            <b>Ready to scan</b>
+          </div>
+          <div className="floating room">
+            <span>●</span> Room allocated
+          </div>
+        </div>
+      </section>
+
+      <section className="strip ">
+        <p className="pl-4">
+          ONE PLATFORM. <i>EVERYDAY CLARITY.</i>
+        </p>
+        <span className="max-sm:hidden">✦</span>
+        <p>
+          ONE PLATFORM. <i>EVERYDAY CLARITY.</i>
+        </p>
+      </section>
+
+      <section className="intro" id="about">
+        <p className="eyebrow">
+          <span></span> A better foundation
+        </p>
+        <h2>
+          Less administration.
+          <br />
+          <em>More belonging.</em>
+        </h2>
+        <p>
+          OpenHostel brings the everyday rhythm of hostel life into one
+          thoughtfully simple platform.
+        </p>
+      </section>
+
+      <section className="flows" id="how">
+        <article className="flow-card red">
+          <p>01 / STUDENT ONBOARDING</p>
+          <h3>
+            From application
+            <br />
+            to <em>settled in.</em>
+          </h3>
+          <div className="flow-line">
+            <span>Register</span>
+            <b>→</b>
+            <span>Approve</span>
+            <b>→</b>
+            <span>Welcome</span>
+          </div>
+          <div className="number">01</div>
+        </article>
+        <article className="flow-card green">
+          <p>02 / MESS, MADE EASY</p>
+          <h3>
+            Good food. Clear
+            <br />
+            <em>plans.</em>
+          </h3>
+          <div className="meal">
+            <span>☀</span>
+            <div>
+              <small>UP NEXT</small>
+              <b>Lunch · 01:00 PM</b>
+            </div>
+            <i>›</i>
+          </div>
+          <div className="number">02</div>
+        </article>
+      </section>
+
+      <section className="roles" id="roles">
+        <div className="roles-heading">
+          <p className="eyebrow">
+            <span></span> Designed around people
+          </p>
+          <h2>
+            One home.
+            <br />
+            <em>Every role.</em>
+          </h2>
+        </div>
+        <div className="role-list">
+          {[
+            [
+              "01",
+              "Students",
+              "Your room, meals, leave and notices—in your pocket.",
+            ],
+            [
+              "02",
+              "Caretakers",
+              "Approvals and records without the endless register.",
+            ],
+            [
+              "03",
+              "Mess vendors",
+              "Plans, payments, menus and daily demand—clear.",
+            ],
+            [
+              "04",
+              "Gatekeepers",
+              "Leave details that automatically keep mess in sync.",
+            ],
+          ].map(([n, title, text]) => (
+            <div className="role" key={n}>
+              <span>{n}</span>
+              <div>
+                <h3>{title}</h3>
+                <p>{text}</p>
+              </div>
+              <b>↗</b>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="final">
+        <p className="eyebrow light">
+          <span></span> Start with what matters
+        </p>
+        <h2>
+          Hostel life,
+          <br />
+          <em>opened up.</em>
+        </h2>
+        <p>
+          Build a calmer, clearer experience for your whole hostel community.
+        </p>
+        <a
+          className="primary-cta pale"
+          href="mailto:hello@openhostel.org?subject=OpenHostel%20registration"
+        >
+          Register your hostel <Arrow />
+        </a>
+      </section>
+
+      <footer>
+        <a className="brand footer-brand" href="#top">
+          <i>O</i>
+          <span>OpenHostel</span>
+        </a>
+        <p>
+          An open-source operating system
+          <br />
+          for college hostels.
+        </p>
+        <div className="foot-links">
+          <a href="#how">How it works</a>
+          <a href="#roles">Roles</a>
+          <a href="mailto:hello@openhostel.org">Contact</a>
+        </div>
+        <small>© 2025 OpenHostel. Built for the community.</small>
+      </footer>
+    </main>
   );
 }

@@ -1,0 +1,183 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Hostel {
+  CSA
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  email        String   @unique
+  passwordHash String
+  role         String   @default("STUDENT")
+  status       String   @default("PENDING")
+  firstName    String?
+  lastName     String?
+  phone        String?
+  uniqueId     String?  @unique
+  photoUrl     String?
+  college      String?
+  branch       String?
+  hostel       Hostel?
+  passingYear  Int?
+  enrollmentNo String?  @unique
+  roomNumber   String?
+  mustChangePassword Boolean @default(false)
+  temporaryPassword  String?
+  passwordChangedAt   DateTime?
+  approvedAt          DateTime?
+  approvedById        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  managedMesses Mess[] @relation("MessManager")
+  messStaff     MessStaff[]
+  messPassRequests MessPassRequest[] @relation("PassHolder")
+  approvedMessPasses MessPassRequest[] @relation("PassApprover")
+  mealTransactions MealTransaction[]
+  dailyMessPassValidations DailyMessPassValidation[]
+}
+
+model Mess {
+  id          String      @id @default(cuid())
+  name        String
+  hostel      Hostel      @unique
+  menuImageUrl String?
+  phoneNumbers String[]
+  email       String?
+  about       String?
+  managerId   String
+  manager     User        @relation("MessManager", fields: [managerId], references: [id], onDelete: Restrict)
+  mealWindows MealWindow[]
+  dailyMealWindows DailyMealWindow[]
+  staff       MessStaff[]
+  passOffers  MessPassOffer[]
+  passRequests MessPassRequest[]
+  mealTransactions MealTransaction[]
+  dailyMessPassValidations DailyMessPassValidation[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model MealWindow {
+  id        String @id @default(cuid())
+  messId    String
+  mess      Mess   @relation(fields: [messId], references: [id], onDelete: Cascade)
+  label     String
+  startTime String
+  endTime   String
+  sortOrder Int    @default(0)
+  transactions MealTransaction[]
+  dailyOverrides DailyMealWindow[]
+}
+
+model DailyMealWindow {
+  id           String     @id @default(cuid())
+  messId       String
+  mess         Mess       @relation(fields: [messId], references: [id], onDelete: Cascade)
+  mealWindowId String
+  mealWindow   MealWindow @relation(fields: [mealWindowId], references: [id], onDelete: Cascade)
+  serviceDate  String
+  startTime    String
+  endTime      String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([mealWindowId, serviceDate])
+  @@index([messId, serviceDate])
+}
+
+model MessStaff {
+  id        String   @id @default(cuid())
+  messId    String
+  userId    String
+  mess      Mess     @relation(fields: [messId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([messId, userId])
+}
+
+model MessPassOffer {
+  id        String   @id @default(cuid())
+  messId    String
+  mess      Mess     @relation(fields: [messId], references: [id], onDelete: Cascade)
+  title     String
+  days      Int
+  price     Int
+  active    Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  requests  MessPassRequest[]
+}
+
+model MessPassRequest {
+  id              String   @id @default(cuid())
+  messId          String
+  mess            Mess     @relation(fields: [messId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User     @relation("PassHolder", fields: [userId], references: [id], onDelete: Cascade)
+  offerId         String?
+  offer           MessPassOffer? @relation(fields: [offerId], references: [id], onDelete: SetNull)
+  requestedDays   Int
+  requestedPrice  Int
+  status          String   @default("PENDING")
+  finalDays       Int?
+  finalAmount     Int?
+  startsAt        DateTime?
+  expiresAt       DateTime?
+  approvedById    String?
+  approvedBy      User?    @relation("PassApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+  approvedAt      DateTime?
+  pauseStartedAt  DateTime?
+  pauseEndsAt     DateTime?
+  pauseOriginalExpiresAt DateTime?
+  pausePlannedDays Int?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  dailyValidations DailyMessPassValidation[]
+}
+
+// Stores a successful pass check for one mess-service day. It is deliberately
+// server-side, so a client cannot reuse or alter pass-validation data.
+model DailyMessPassValidation {
+  id          String   @id @default(cuid())
+  messId      String
+  mess        Mess     @relation(fields: [messId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  passId      String
+  pass        MessPassRequest @relation(fields: [passId], references: [id], onDelete: Cascade)
+  serviceDate String
+  validatedAt DateTime @default(now())
+
+  @@unique([messId, userId, serviceDate])
+  @@index([passId])
+}
+
+model MealTransaction {
+  id           String     @id @default(cuid())
+  messId       String
+  mess         Mess       @relation(fields: [messId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mealWindowId String
+  mealWindow   MealWindow @relation(fields: [mealWindowId], references: [id], onDelete: Cascade)
+  serviceDate  String
+  servedAt     DateTime   @default(now())
+
+  @@unique([messId, userId, mealWindowId, serviceDate])
+  @@index([messId, servedAt])
+}
