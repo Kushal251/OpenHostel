@@ -20,6 +20,11 @@ type Person = {
   photoUrl?: string;
   role: string;
 };
+type ManagerPage = {
+  items: Person[];
+  hasNext: boolean;
+  error?: string;
+};
 type Mess = {
   id: string;
   name: string;
@@ -72,6 +77,7 @@ export default function MessWorkspace({ role }: { role: string }) {
   const [messLoadError, setMessLoadError] = useState("");
   const [managers, setManagers] = useState<Person[]>([]);
   const [loadingManagers, setLoadingManagers] = useState(false);
+  const [managerLoadError, setManagerLoadError] = useState("");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Mess | null>(null);
   const [form, setForm] = useState(blank());
@@ -114,14 +120,29 @@ export default function MessWorkspace({ role }: { role: string }) {
   const loadManagers = async () => {
     if (role !== "ADMIN" || managers.length || loadingManagers) return;
     setLoadingManagers(true);
+    setManagerLoadError("");
     try {
-      const response = await fetch("/api/admin/users");
-      if (response.ok)
-        setManagers(
-          (await response.json()).filter(
-            (user: Person) => user.role === "MESS_MANAGER",
-          ),
+      const allManagers: Person[] = [];
+      let page = 1;
+      let hasNext = true;
+      while (hasNext) {
+        const response = await fetch(
+          `/api/admin/users?role=MESS_MANAGER&status=ACTIVE&page=${page}`,
         );
+        const data = (await response.json()) as ManagerPage;
+        if (!response.ok)
+          throw new Error(data.error || "Could not load mess managers.");
+        if (!Array.isArray(data.items) || typeof data.hasNext !== "boolean")
+          throw new Error("Could not load mess managers.");
+        allManagers.push(...data.items);
+        hasNext = data.hasNext;
+        page += 1;
+      }
+      setManagers(allManagers);
+    } catch (caught) {
+      setManagerLoadError(
+        caught instanceof Error ? caught.message : "Could not load mess managers.",
+      );
     } finally {
       setLoadingManagers(false);
     }
@@ -281,6 +302,7 @@ export default function MessWorkspace({ role }: { role: string }) {
         role={role}
         managers={managers}
         loadingManagers={loadingManagers}
+        managerLoadError={managerLoadError}
         error={error}
         saving={saving}
         title={editing ? "Edit mess details" : "Create a mess"}
@@ -424,6 +446,7 @@ function MessForm({
   role,
   managers,
   loadingManagers,
+  managerLoadError,
   error,
   saving,
   title,
@@ -436,6 +459,7 @@ function MessForm({
   role: string;
   managers: Person[];
   loadingManagers: boolean;
+  managerLoadError: string;
   error: string;
   saving: boolean;
   title: string;
@@ -503,6 +527,15 @@ function MessForm({
                   </option>
                 ))}
               </select>
+              {managerLoadError ? (
+                <p className="mt-1 text-xs font-medium text-red-600">
+                  {managerLoadError}
+                </p>
+              ) : !loadingManagers && managers.length === 0 ? (
+                <p className="mt-1 text-xs font-medium text-amber-700">
+                  No active mess manager found. Create one from the Admin directory first.
+                </p>
+              ) : null}
             </label>
           )}
           <Field

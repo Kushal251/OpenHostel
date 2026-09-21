@@ -12,13 +12,14 @@ export async function GET(request: Request) {
   const page = Math.max(1, Number.parseInt(query.get("page") || "1", 10) || 1);
   const search = (query.get("q") || "").trim();
   const status = query.get("status") || "ALL";
+  const role = (query.get("role") || "").trim();
   const refresh = query.get("refresh") === "true";
   if (refresh) {
     revalidateTag("admin-user-pages", { expire: 0 });
     revalidateTag("admin-user-summary", { expire: 0 });
   }
   const [result, summary] = await Promise.all([
-    (refresh ? getAdminUserPage : getCachedAdminUserPage)(page, search, status),
+    (refresh ? getAdminUserPage : getCachedAdminUserPage)(page, search, status, role),
     (refresh ? getAdminApplicationCounts : getCachedAdminApplicationCounts)(),
   ]);
   return NextResponse.json({

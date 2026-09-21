@@ -28,10 +28,15 @@ export const adminUserSelect = {
   updatedAt: true,
 } satisfies Prisma.UserSelect;
 
-function whereFor(query: string, status: string): Prisma.UserWhereInput {
+function whereFor(
+  query: string,
+  status: string,
+  role = "",
+): Prisma.UserWhereInput {
   const search = query.trim();
   return {
     ...(status && status !== "ALL" ? { status } : {}),
+    ...(role ? { role } : {}),
     ...(search
       ? {
           OR: [
@@ -48,8 +53,13 @@ function whereFor(query: string, status: string): Prisma.UserWhereInput {
   };
 }
 
-export async function getAdminUserPage(page: number, query: string, status: string) {
-  const where = whereFor(query, status);
+export async function getAdminUserPage(
+  page: number,
+  query: string,
+  status: string,
+  role = "",
+) {
+  const where = whereFor(query, status, role);
   const [items, total] = await Promise.all([
     prisma.user.findMany({
       where,

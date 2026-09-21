@@ -2,6 +2,7 @@ import Link from "next/link";
 import { auth } from "@/auth";
 import LogoutButton from "./LogoutButton";
 import HomeScanner from "./mess/HomeScanner";
+import MobileNavigation from "./MobileNavigation";
 
 export default async function AppNavbar() {
   const session = await auth();
@@ -14,6 +15,17 @@ export default async function AppNavbar() {
     .join("")
     .slice(0, 2)
     .toUpperCase();
+  const navigationLinks = [
+    { href: "/home", label: "Home", icon: "⌂" },
+    { href: "/history", label: "History", icon: "◷" },
+    { href: "/profile", label: "My profile", icon: "◉" },
+    ...(role === "ADMIN"
+      ? [{ href: "/admin", label: "Manage people", icon: "♙" }]
+      : []),
+    ...(["ADMIN", "MESS_MANAGER"].includes(role)
+      ? [{ href: "/mess", label: "Mess workspace", icon: "⌑" }]
+      : []),
+  ];
 
   return (
     <>
@@ -23,6 +35,7 @@ export default async function AppNavbar() {
           aria-label="Main navigation"
         >
           <div className="flex min-w-0 items-center gap-4 sm:gap-6">
+            <MobileNavigation links={navigationLinks} name={name} role={role} initials={initials} />
             <Link
               href="/home"
               className="truncate text-lg font-bold text-[#234b50] sm:text-xl"
@@ -59,7 +72,7 @@ export default async function AppNavbar() {
             )}
           </div>
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
-            <LogoutButton />
+            <div className="hidden sm:block"><LogoutButton /></div>
             <Link
               href="/profile"
               className="flex min-h-11 items-center gap-3 rounded-full py-1 pl-1 pr-1 transition hover:bg-slate-100 sm:pl-2"
